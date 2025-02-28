@@ -6,7 +6,7 @@ using namespace std;
 
 bool gameOver;
 const int width = 20;
-const int height = 17;
+const int height = 20;
 int x, y, fruitX, fruitY, score;
 int tailX[100], tailY[100];
 int nTail;
@@ -15,6 +15,22 @@ enum eDirecton { STOP = 0, LEFT, RIGHT, UP, DOWN };
 eDirecton dir;
 bool gameStarted = false;
 
+int zigzagSteps = 5; // Number of steps in one direction before changing
+int stepsTaken = 0;  // Counter for steps taken in the current direction
+bool movingRight = true;
+
+void SetConsoleSize(int width, int height) {
+    // Get the console handle
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    
+    // Set the screen buffer size
+    COORD coord = { (short)width, (short)height };
+    SetConsoleScreenBufferSize(hConsole, coord);
+    
+    // Set the window size
+    SMALL_RECT rect = { 0, 0, (short)(width - 1), (short)(height - 1) };
+    SetConsoleWindowInfo(hConsole, TRUE, &rect);
+}
 void Setup()
 {
     gameOver = false;
@@ -40,14 +56,14 @@ void Draw()
             if (j == 0)
                 cout << "#";
             if (i == y && j == x)
-                cout << "O";
+                cout << "o";
             else if (i == fruitY && j == fruitX)
-                cout << "F";
+                cout << "*";
             else {
                 bool print = false;
                 for (int k = 0; k < nTail; k++) {
                     if (tailX[k] == j && tailY[k] == i) {
-                        cout << "o";
+                        cout << "-";
                         print = true;
                     }
                 }
@@ -67,25 +83,29 @@ void Draw()
     if (!gameStarted)
         cout << "Press ENTER to start the game!" << endl;
 }
-
 void Input()
 {
     if (_kbhit()) {
+        char currentDirection = dir; // Store the current direction
         switch (_getch()) {
         case 'a':
-            dir = LEFT;
+            if (currentDirection != RIGHT) // Prevent reversing
+                dir = LEFT;
             gameStarted = true;
             break;
         case 'd':
-            dir = RIGHT;
+            if (currentDirection != LEFT) // Prevent reversing
+                dir = RIGHT;
             gameStarted = true;
             break;
         case 'w':
-            dir = UP;
+            if (currentDirection != DOWN) // Prevent reversing
+                dir = UP;
             gameStarted = true;
             break;
         case 's':
-            dir = DOWN;
+            if (currentDirection != UP) // Prevent reversing
+                dir = DOWN;
             gameStarted = true;
             break;
         case 'x':
@@ -97,7 +117,6 @@ void Input()
         }
     }
 }
-
 void Logic()
 {
     if (!gameStarted)
@@ -132,6 +151,36 @@ void Logic()
     default:
         break;
     }
+    
+    /* if (stepsTaken < zigzagSteps) {
+        if (movingRight) {
+            x++; // Move right
+        } else {
+            x--; // Move left
+        }
+        stepsTaken++;
+    } else {
+        // Change direction
+        movingRight = !movingRight; // Toggle direction
+        stepsTaken = 0; // Reset step counter
+        y++; // Move down
+    }
+    /* if (movingRight) {
+        if (x < width - 1) {
+            x++; // Move right
+        } else {
+            movingRight = false; // Change direction to left
+            y++; // Move down
+        }
+    } else {
+        if (x > 0) {
+            x--; // Move left
+        } else {
+            movingRight = true; // Change direction to right
+            y++; // Move down
+        }
+    }
+*/
 
     // End game if snake hits the border
     if (x >= width || x < 0 || y >= height || y < 0)
@@ -153,6 +202,7 @@ void Logic()
 
 int main()
 {
+	SetConsoleSize(width + 2, height + 2);
     Setup();
     while (!gameOver) {
         Draw();
